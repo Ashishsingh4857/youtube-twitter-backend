@@ -9,6 +9,7 @@ import {
 } from "../utils/cloudinary.js";
 import { Like } from "../models/like.model.js";
 import { Comment } from "../models/comment.model.js";
+import { User } from "../models/user.model.js";
 const getAllVideos = asyncHandler(async (req, res) => {
   const {
     page = 1,
@@ -431,6 +432,110 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     throw new ApiError(500, "something went wrong", error);
   }
 });
+const getVideosByUser = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+
+  if (!username) {
+    throw new ApiError(400, "Username is required");
+  }
+
+  // Find user by username
+  const user = await User.findOne({ username });
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  try {
+    const videos = await Video.aggregate([
+      // Match videos by owner (user)
+      {
+        $match: {
+          owner: user._id,
+        },
+      },
+      // Join the Likes collection to get likes count and check if liked
+      {
+        $lookup: {
+          from: "likes",
+          foreignField: "video",
+          localField: "_id",
+          as: "likes",
+        },
+      },
+      // Join the Comments collection to get comments count
+      {
+        $lookup: {
+          from: "comments",
+          foreignField: "video",
+          localField: "_id",
+          as: "comments",
+        },
+      },
+      // Add fields for likes count, comments count, and isLiked
+      {
+        $addFields: {
+          likesCount: {
+            $size: "$likes",
+          },
+          commentsCount: {
+            $size: "$comments",
+          },
+          isLiked: {
+            $cond: {
+              if: {
+                $in: [req.user?._id, "$likes.likedBy"],
+              },
+              then: true,
+              else: false,
+            },
+          },
+        },
+      },
+      // Join the users collection to get owner details
+      {
+        $lookup: {
+          from: "users",
+          foreignField: "_id",
+          localField: "owner",
+          as: "owner",
+        },
+      },
+      // Add fields for owner details
+      {
+        $addFields: {
+          owner: {
+            $first: "$owner",
+          },
+        },
+      },
+      // Project required fields
+      {
+        $project: {
+          videoFile: 1,
+          thumbnail: 1,
+          title: 1,
+          description: 1,
+          views: 1,
+          createdAt: 1,
+          duration: 1,
+          likesCount: 1,
+          commentsCount: 1,
+          isLiked: 1,
+          owner: {
+            username: "$owner.username",
+            avatar: "$owner.avatar",
+          },
+        },
+      },
+    ]);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, videos, "Videos fetched successfully"));
+  } catch (error) {
+    throw new ApiError(500, "Something went wrong", error);
+  }
+});
 
 export {
   getAllVideos,
@@ -439,4 +544,5 @@ export {
   updateVideo,
   deleteVideo,
   togglePublishStatus,
+  getVideosByUser,
 };

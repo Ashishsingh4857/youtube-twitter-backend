@@ -7,6 +7,7 @@ import {
   deleteVideo,
   updateVideo,
   togglePublishStatus,
+  getVideosByUser,
 } from "../controllers/video.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 const videoRouter = Router();
@@ -35,5 +36,6 @@ videoRouter
   .patch(upload.single("thumbnail"), updateVideo);
 
 videoRouter.route("/toggle/publish/:videoId").patch(togglePublishStatus);
+videoRouter.route("/user/:username").get(getVideosByUser);
 
 export default videoRouter;

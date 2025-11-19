@@ -54,7 +54,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // upload in database
   const user = await User.create({
     fullName,
-    avatar: avatar.url,
+    avatar: avatar?.url,
     coverImage: coverImage?.url || "",
     email,
     password,
@@ -259,7 +259,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   }
 
   const avatar = await uploadOnCloudinary(avatarLocalPath); // Upload to Cloudinary
-  if (!avatar.url) {
+  if (!avatar?.url) {
     throw new ApiError(400, "Error while uploading avatar");
   }
   //TODO: delete old image
@@ -267,7 +267,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   // Update user's avatar URL in the database
 
   const user = await User.findByIdAndUpdate(req.user._id, {
-    $set: { avatar: avatar.url },
+    $set: { avatar: avatar?.url },
   }).select("-password -refreshToken");
   return res
     .status(200)
@@ -362,12 +362,13 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         subscribersCount: 1,
         channelsSubscribedToCount: 1,
         isSubscribed: 1,
-        avatar: 1,
+        "avatar.url": 1,
         coverImage: 1,
         email: 1,
         createdAt: 1,
         updatedAt: 1,
         totalVideos: 1,
+        videos: 1,
       },
     },
   ]);
@@ -408,7 +409,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
                   $project: {
                     fullName: 1,
                     username: 1,
-                    avatar: 1,
+                    "avatar.url": 1,
                     _id: 1,
                   },
                 },

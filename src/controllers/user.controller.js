@@ -251,8 +251,8 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "User updated successfully"));
 });
 const updateUserAvatar = asyncHandler(async (req, res) => {
-  //req.file => from multer middleware
-  //req.user => from verifyJwt middleware
+  // req.file => from multer middleware
+  // req.user => from verifyJwt middleware
   const avatarLocalPath = req.file?.path;
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is missing");
@@ -262,20 +262,30 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   if (!avatar?.url) {
     throw new ApiError(400, "Error while uploading avatar");
   }
-  //TODO: delete old image
-  await destroyOnCloudinary(req.user?.avatar);
-  // Update user's avatar URL in the database
 
-  const user = await User.findByIdAndUpdate(req.user._id, {
-    $set: { avatar: avatar?.url },
-  }).select("-password -refreshToken");
+  // Update user's avatar in the database
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        "avatar.url": avatar.url,
+        "avatar.public_id": avatar.public_id,
+      },
+    },
+    { new: true }
+  ).select("-password -refreshToken");
+  //  delete old image
+  if (req.user?.avatar?.public_id) {
+    await destroyOnCloudinary(req.user.avatar.public_id, "image");
+  }
+
   return res
     .status(200)
     .json(ApiResponse(200, user, "Avatar image updated successfully"));
 });
 const updateUserCoverImage = asyncHandler(async (req, res) => {
-  //req.file => from multer middleware
-  //req.user => from verifyJwt middleware
+  // req.file => from multer middleware
+  // req.user => from verifyJwt middleware
   const coverImageLocalPath = req.file?.path;
   if (!coverImageLocalPath) {
     throw new ApiError(400, "Cover image file is missing");
@@ -285,15 +295,22 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   if (!coverImage.url) {
     throw new ApiError(400, "Error while uploading cover image");
   }
-  //TODO: delete old image
-  if (req.user?.coverImage) {
-    await destroyOnCloudinary(req.user?.coverImage);
-  }
-  // Update user's cover image URL in the database
 
-  const user = await User.findByIdAndUpdate(req.user._id, {
-    $set: { coverImage: coverImage.url },
-  }).select("-password -refreshToken");
+  // Update user's cover image in the database
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        "coverImage.url": coverImage.url,
+        "coverImage.public_id": coverImage.public_id,
+      },
+    },
+    { new: true }
+  ).select("-password -refreshToken");
+  // TODO: delete old image
+  if (req.user?.coverImage?.public_id) {
+    await destroyOnCloudinary(req.user.coverImage.public_id, "image");
+  }
 
   return res
     .status(200)

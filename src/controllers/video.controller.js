@@ -124,6 +124,16 @@ const publishAVideo = asyncHandler(async (req, res) => {
   if (!title) throw new ApiError(400, "title is required");
 
   if (!description) throw new ApiError(400, "description is required");
+  let isPublished = true;
+  if (visibility) {
+    if (visibility === "public") {
+      isPublished = true;
+    } else if (visibility === "private") {
+      isPublished = false;
+    } else {
+      throw new ApiError(400, "visibility must be 'public' or 'private'");
+    }
+  }
 
   // get video, upload to cloudinary, create video
   const videoFileLocalPath = req.files?.videoFile?.[0]?.path;
@@ -153,7 +163,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
       },
       thumbnail: { url: thumbnail.url, public_id: thumbnail.public_id },
       owner: req.user?._id,
-      isPublished: visibility,
+      isPublished,
     });
     //check video is created
     const publishedVideo = await Video.findById(createdVideo?._id);

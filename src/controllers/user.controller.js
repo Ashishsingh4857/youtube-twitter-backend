@@ -227,21 +227,22 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 // Update user account details (e.g., fullName, username, email)
 const updateAccountDetails = asyncHandler(async (req, res) => {
   const { fullName, username, email } = req.body;
+
   if (!fullName && !username && !email) {
     throw new ApiError(400, "At least one field is required to update");
   }
+  const updateFields = {};
+  if (fullName) updateFields.fullName = fullName;
+  if (username) updateFields.username = username;
+  if (email) updateFields.email = email;
+
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
-      $set: {
-        email: email,
-        fullName: fullName,
-        username: username, // add this line
-      },
+      $set: updateFields,
     },
     { new: true }
   ).select("-password -refreshToken");
-  // Exclude password from the response
 
   if (!user) {
     throw new ApiError(500, "Something went wrong while updating user");

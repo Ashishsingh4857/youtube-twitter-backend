@@ -159,6 +159,29 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
   }
 });
 
+const getSubscriptionStatus = asyncHandler(async (req, res) => {
+  const { channelId } = req.params;
+
+  if (!isValidObjectId(channelId)) {
+    throw new ApiError(400, "Invalid channelId");
+  }
+
+  const existedSubscription = await Subscription.findOne({
+    subscriber: req.user?._id,
+    channel: channelId,
+  });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { isSubscribed: !!existedSubscription },
+        "Fetched subscription status"
+      )
+    );
+});
+
 // controller to return channel list to which user has subscribed
 const getSubscribedChannels = asyncHandler(async (req, res) => {
   const { subscriberId } = req.params;
@@ -230,4 +253,9 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     );
   }
 });
-export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels };
+export {
+  toggleSubscription,
+  getUserChannelSubscribers,
+  getSubscribedChannels,
+  getSubscriptionStatus,
+};

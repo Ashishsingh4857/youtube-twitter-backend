@@ -4,6 +4,7 @@ import {
   getUserChannelSubscribers,
   toggleSubscription,
   getSubscriptionStatus,
+  removeSubscriber,
 } from "../controllers/subscription.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -18,5 +19,6 @@ subscriptionRouter
   .post(toggleSubscription);
 
 subscriptionRouter.route("/u/:subscriberId").get(getSubscribedChannels);
+subscriptionRouter.route("/remove/:subscriberId").delete(removeSubscriber);
 
 export default subscriptionRouter;
